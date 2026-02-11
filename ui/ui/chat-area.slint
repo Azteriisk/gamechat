@@ -1,0 +1,80 @@
+import { VerticalBox, ScrollView, LineEdit } from "std-widgets.slint";
+import { Theme } from "./theme.slint";
+
+component MessageItem inherits Rectangle {
+    in property <string> sender;
+    in property <string> text;
+    in property <image> avatar; // Placeholder
+
+    height: 60px; // Dynamic height todo
+    background: transparent;
+
+    HorizontalLayout {
+        padding: 10px;
+        spacing: 12px;
+
+        // Avatar placeholder
+        Rectangle {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: Theme.accent;
+        }
+
+        VerticalLayout {
+            spacing: 4px;
+            Text {
+                text: sender;
+                color: Theme.text-header;
+                font-weight: 600;
+                font-size: 14px;
+            }
+            Text {
+                text: text;
+                color: Theme.text-primary;
+                wrap: word-wrap;
+                font-size: 14px;
+            }
+        }
+    }
+}
+
+export component ChatArea inherits Rectangle {
+    in property <[string]> messages;
+    callback send-message(string);
+
+    background: Theme.background-dark;
+
+    VerticalLayout {
+        ScrollView {
+            VerticalLayout {
+                for msg in messages : MessageItem {
+                    sender: "User"; // Mock sender
+                    text: msg;
+                }
+            }
+        }
+
+        // Input Area
+        Rectangle {
+            height: 68px;
+            padding: 16px;
+
+            Rectangle {
+                border-radius: 8px;
+                background: #383a40;
+                
+                input := LineEdit {
+                    height: 100%;
+                    width: 100%;
+                    placeholder-text: "Message #general";
+                    font-size: 14px;
+                    accepted => {
+                        root.send-message(self.text);
+                        self.text = "";
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,37 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { ServerRail } from "./server-rail.slint";
+import { ChannelList } from "./channel-list.slint";
+import { ChatArea } from "./chat-area.slint";
+import { Theme } from "./theme.slint";
+
+export component AppWindow inherits Window {
+    title: "Native Discord Alternative";
+    width: 1000px;
+    height: 700px;
+    background: Theme.background-dark;
+
+    callback send-message(string);
+    in-out property <[string]> messages: ["Welcome to the chat!", "This is a native app.", "Working on it..."];
+
+
+    HorizontalLayout {
+        ServerRail {}
+        
+        ChannelList {
+
+            width: 240px;
+        }
+
+        ChatArea {
+            // Bound to root property
+            messages: root.messages;
+            send-message(text) => {
+                root.send-message(text);
+            }
+        }
+
+
+    }
+}
+
+

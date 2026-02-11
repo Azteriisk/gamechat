@@ -1,0 +1,58 @@
+import { VerticalBox } from "std-widgets.slint";
+import { Theme } from "./theme.slint";
+
+component ChannelItem inherits Rectangle {
+    in property <string> name;
+    in property <bool> active;
+    callback clicked;
+
+    height: 32px;
+    border-radius: 4px;
+    background: active ? #3f4147 : transparent; // Hover/Active styling
+
+    TouchArea {
+        clicked => { root.clicked(); }
+    }
+
+    HorizontalLayout {
+        padding-left: 8px;
+        spacing: 6px;
+        
+        Text {
+            text: "#";
+            color: #949ba4;
+            font-size: 20px;
+            vertical-alignment: center;
+        }
+        Text {
+            text: name;
+            color: active ? Theme.text-header : Theme.text-primary;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component ChannelList inherits Rectangle {
+    in property <[string]> channels: ["general", "random", "announcements"];
+    background: Theme.background-sidebar;
+    width: 240px;
+
+    VerticalBox {
+        padding: 16px;
+        spacing: 4px;
+        alignment: start;
+
+        Text {
+            text: "TEXT CHANNELS";
+            color: Theme.text-muted;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        for channel in channels : ChannelItem {
+            name: channel;
+            active: channel == "general"; // Mock active state
+            clicked => { debug("Channel clicked:", channel); }
+        }
+    }
+}

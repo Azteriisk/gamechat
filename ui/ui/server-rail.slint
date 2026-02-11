@@ -1,0 +1,57 @@
+import { VerticalBox } from "std-widgets.slint";
+import { Theme } from "./theme.slint";
+
+component ServerIcon inherits Rectangle {
+    in property <bool> active;
+    in property <image> icon;
+    in property <string> name;
+    callback clicked;
+
+    width: 48px;
+    height: 48px;
+    border-radius: active ? 16px : 24px;
+    background: active ? Theme.accent : #313338;
+    animate border-radius { duration: 200ms; easing: ease-in-out; }
+    animate background { duration: 200ms; }
+
+    TouchArea {
+        clicked => { root.clicked(); }
+    }
+
+    Text {
+        text: name; // Placeholder if no icon
+        color: white;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+        font-size: 12px;
+    }
+}
+
+export component ServerRail inherits Rectangle {
+    width: 72px;
+    background: Theme.background-rail;
+
+    VerticalBox {
+        padding-top: 12px;
+        spacing: 8px;
+        alignment: start;
+
+        ServerIcon {
+            name: "DM";
+            active: true;
+            clicked => { debug("DM clicked"); }
+        }
+
+        Rectangle {
+            height: 2px;
+            width: 32px;
+            background: Theme.divider;
+            x: (parent.width - self.width) / 2;
+        }
+
+        ServerIcon {
+            name: "R";
+            clicked => { debug("Rust Server clicked"); }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+import { VerticalBox, ScrollView } from "std-widgets.slint";
+
+export component RoomList inherits Rectangle {
+    in property <[string]> rooms;
+    callback room-selected(int);
+
+    VerticalBox {
+        for room[index] in rooms : Rectangle {
+            height: 40px;
+            background: area.pressed ? #444 : #333;
+            border-radius: 4px;
+            
+            area := TouchArea {
+                clicked => { root.room-selected(index); }
+            }
+
+            Text {
+                text: room;
+                color: white;
+                vertical-alignment: center;
+                x: 10px;
+            }
+        }
+    }
+}
