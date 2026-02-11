@@ -19,7 +19,7 @@ A high-performance, native desktop chat application built with Rust, Slint, and 
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/Azteriisk/gamechat
 cd gamechat
 ```
 
@@ -41,4 +41,4 @@ If the app crashes silently on launch:
 3. The `network` crate is currently configured with minimal features (`default-features = false`) to prevent stack overflows.
 
 ## License
-MIT
+This project is licensed under [The Unlicense](https://unlicense.org/) - it is free use for whatever. Use it, fork it, break it, have fun!
