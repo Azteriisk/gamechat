@@ -1,37 +1,260 @@
 import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
-import { ServerRail } from "./server-rail.slint";
+import { ServerRail, ServerData } from "./server-rail.slint";
 import { ChannelList } from "./channel-list.slint";
 import { ChatArea } from "./chat-area.slint";
 import { Theme } from "./theme.slint";
+import { UserProfile, UserProfileData } from "./user-profile.slint";
+import { SettingsModal } from "./settings-modal.slint";
+import { LoginScreen, SavedProfile } from "./login-screen.slint";
+import { AdminPanel, RoleData, MemberData } from "./admin-panel.slint";
+
 
 export component AppWindow inherits Window {
     title: "Native Discord Alternative";
-    width: 1000px;
-    height: 700px;
+    // Start small, allow resize. min-width prevents squishing too far.
+    preferred-width: 400px;
+    preferred-height: 500px;
+    min-width: 72px;   // At minimum, show the server rail
+    min-height: 300px;
     background: Theme.background-dark;
 
+    // Auth
+    callback login(string, string, string);       // username, password, homeserver
+    callback open-register;                        // opens Element.io in browser
+    callback quick-login(int);
+    callback logout();
+    in-out property <bool> logged-in: false;
+    in-out property <string> current-user-id: "";
+    in-out property <string> current-display-name: "";
+    in-out property <[SavedProfile]> saved-profiles: [];
+    in-out property <string> login-error: "";
+    in-out property <bool> login-loading: false;
+
     callback send-message(string);
-    in-out property <[string]> messages: ["Welcome to the chat!", "This is a native app.", "Working on it..."];
+    callback channel-selected(string);
+    callback server-selected(int);
+    callback toggle-voice(bool);
+    in-out property <string> active-channel: "general";
+    in-out property <bool> voice-active: false;
+    in-out property <[string]> voice-users: [];
+    in-out property <string> voice-channel-name: "General Voice";
+    in-out property <bool> compact-mode: false;
 
+    in-out property <[string]> messages: ["Welcome to #general!"];
+    in-out property <bool> show-profile: false;
+    callback save-settings(string, string);
+    in-out property <bool> show-settings: false;
+    in-out property <[string]> input-devices: ["Default Input"];
+    in-out property <[string]> output-devices: ["Default Output"];
 
-    HorizontalLayout {
-        ServerRail {}
-        
-        ChannelList {
+    in-out property <UserProfileData> current-profile: {
+        username: "User",
+        status: "Online",
+        bio: "This is a placeholder bio.",
+        avatar-color: #7289da
+    };
 
-            width: 240px;
-        }
+    in-out property <[string]> channels: ["general", "random", "announcements"];
 
-        ChatArea {
-            // Bound to root property
-            messages: root.messages;
-            send-message(text) => {
-                root.send-message(text);
+    in-out property <[ServerData]> servers: [
+        { id: "dm", name: "DM", color: #5865f2, online: true },
+        { id: "rust", name: "R", color: #e64a19, online: false },
+        { id: "matrix", name: "M", color: #00bfa5, online: true }
+    ];
+    in-out property <int> active-server-index: 0;
+
+    // Admin
+    callback create-channel(string);
+    callback delete-channel(string);
+    callback create-role(string);
+    callback assign-role(string, string);
+    callback save-profile(UserProfileData);
+    in-out property <bool> show-admin: false;
+    in-out property <bool> is-admin: true;
+    in-out property <[RoleData]> roles: [];
+    in-out property <[MemberData]> members: [];
+
+    // Login Screen (shown when not logged in)
+    if !root.logged-in : LoginScreen {
+        saved-profiles: root.saved-profiles;
+        error-message: root.login-error;
+        is-loading: root.login-loading;
+        login(user, pass, server) => { root.login(user, pass, server); }
+        open-register => { root.open-register(); }
+        quick-login(idx) => { root.quick-login(idx); }
+    }
+    // Main App (shown when logged in)
+    if root.logged-in : Rectangle {
+        HorizontalLayout {
+            ServerRail {
+                servers: root.servers;
+                active-index: root.active-server-index;
+                server-selected(index) => {
+                    root.active-server-index = index;
+                    root.server-selected(index);
+                }
+            }
+
+            if !root.compact-mode : ChannelList {
+                width: 240px;
+                channels: root.channels;
+                active-channel: root.active-channel;
+                voice-active: root.voice-active;
+                voice-channel-name: root.voice-channel-name;
+                voice-users: root.voice-users;
+                display-name: root.current-display-name != "" ? root.current-display-name : "User";
+                is-admin: root.is-admin;
+                channel-selected(id) => {
+                    root.active-channel = id;
+                    root.channel-selected(id);
+                }
+                toggle-voice => {
+                    root.voice-active = !root.voice-active;
+                    root.toggle-voice(root.voice-active);
+                }
+                settings-clicked => {
+                    root.show-settings = true;
+                }
+                admin-clicked => {
+                    root.show-admin = true;
+                }
+                profile-clicked => {
+                    root.show-profile = true;
+                }
+            }
+
+            if !root.compact-mode : ChatArea {
+                messages: root.messages;
+                channel-name: root.active-channel;
+                send-message(text) => {
+                    root.send-message(text);
+                }
+                profile-clicked => {
+                    root.show-profile = true;
+                }
             }
         }
 
+        // Compact Mode
+        if root.compact-mode : Rectangle {
+            horizontal-stretch: 1;
+            background: Theme.background-sidebar;
 
+            VerticalLayout {
+                padding: 12px;
+                spacing: 6px;
+                alignment: start;
+
+                Text {
+                    text: "CHANNELS";
+                    color: Theme.text-muted;
+                    font-size: 11px;
+                    font-weight: 700;
+                }
+
+                for channel in root.channels : Rectangle {
+                    height: 36px;
+                    border-radius: 4px;
+                    background: root.active-channel == channel ? #3f4147 : transparent;
+
+                    TouchArea {
+                        clicked => {
+                            root.active-channel = channel;
+                            root.channel-selected(channel);
+                        }
+                        mouse-cursor: pointer;
+                    }
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 8px;
+                        Text { text: "#"; color: #949ba4; font-size: 18px; vertical-alignment: center; }
+                        Text {
+                            text: channel;
+                            color: root.active-channel == channel ? Theme.text-header : Theme.text-primary;
+                            vertical-alignment: center;
+                            font-size: 14px;
+                        }
+                    }
+                }
+
+                Rectangle { vertical-stretch: 1; }
+
+                Rectangle {
+                    height: 36px;
+                    border-radius: 4px;
+                    TouchArea {
+                        clicked => { root.compact-mode = false; }
+                        mouse-cursor: pointer;
+                    }
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 8px;
+                        Text { text: "▶"; font-size: 14px; vertical-alignment: center; color: Theme.text-primary; }
+                        Text { text: "Expand"; color: Theme.text-primary; vertical-alignment: center; }
+                    }
+                }
+
+                Rectangle {
+                    height: 36px;
+                    border-radius: 4px;
+                    TouchArea {
+                        clicked => { root.show-settings = true; }
+                        mouse-cursor: pointer;
+                    }
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        spacing: 8px;
+                        Text { text: "⚙️"; font-size: 16px; vertical-alignment: center; }
+                        Text { text: "Settings"; color: Theme.text-primary; vertical-alignment: center; }
+                    }
+                }
+            }
+        }
+
+        if show-profile : UserProfile {
+            width: 100%;
+            height: 100%;
+            user: root.current-profile;
+            close-profile => { root.show-profile = false; }
+            save-profile(data) => {
+                root.current-profile = data;
+                root.save-profile(data);
+            }
+            logout => {
+                root.show-profile = false;
+                root.logout();
+            }
+        }
+
+        if show-settings : SettingsModal {
+            width: 100%;
+            height: 100%;
+            input-devices: root.input-devices;
+            output-devices: root.output-devices;
+            close => { root.show-settings = false; }
+            save-settings(input, output) => {
+                root.show-settings = false;
+                root.save-settings(input, output);
+            }
+        }
+
+        if show-admin : AdminPanel {
+            width: 100%;
+            height: 100%;
+            server-name: root.servers[root.active-server-index].name;
+            channels: root.channels;
+            roles: root.roles;
+            members: root.members;
+            close => { root.show-admin = false; }
+            create-channel(name) => { root.create-channel(name); }
+            delete-channel(name) => { root.delete-channel(name); }
+            create-role(name) => { root.create-role(name); }
+            assign-role(user, role) => { root.assign-role(user, role); }
+        }
     }
 }
+
+
 
 

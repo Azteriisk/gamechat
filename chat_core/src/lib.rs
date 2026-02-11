@@ -48,6 +48,36 @@ pub struct Message {
     pub timestamp: u64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum Permission {
+    ManageChannels,
+    ManageRoles,
+    ManageMembers,
+    SendMessages,
+    ReadMessages,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Role {
+    pub name: String,
+    pub color: String, // hex color
+    pub permissions: Vec<Permission>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum ChannelType {
+    Text,
+    Voice,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Channel {
+    pub id: String,
+    pub name: String,
+    pub channel_type: ChannelType,
+    pub creator_id: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

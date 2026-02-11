@@ -1,0 +1,267 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox } from "std-widgets.slint";
+import { Theme } from "./theme.slint";
+
+export struct UserProfileData {
+    username: string,
+    status: string,
+    avatar-color: color,
+    bio: string,
+}
+
+export component UserProfile inherits Rectangle {
+    in property <UserProfileData> user;
+    in-out property <bool> edit-mode: false;
+    callback close-profile;
+    callback save-profile(UserProfileData);
+    callback logout;
+
+    background: #00000080;
+
+    TouchArea {
+        clicked => { root.close-profile(); }
+    }
+
+    Rectangle {
+        width: 440px;
+        height: root.edit-mode ? 480px : 340px;
+        background: Theme.background-sidebar;
+        border-radius: 8px;
+        border-width: 1px;
+        border-color: #202225;
+
+        TouchArea {}
+
+        VerticalLayout {
+            padding: 24px;
+            spacing: 12px;
+
+            // Banner / Avatar Area
+            Rectangle {
+                height: 80px;
+                background: Theme.accent;
+                border-radius: 4px;
+
+                Rectangle {
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 40px;
+                    background: user.avatar-color;
+                    border-width: 4px;
+                    border-color: Theme.background-sidebar;
+                    x: 20px;
+                    y: 40px;
+
+                    Text {
+                        text: "👤";
+                        font-size: 40px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            // View Mode
+            if !root.edit-mode : VerticalBox {
+                padding-top: 40px;
+                spacing: 8px;
+
+                Text {
+                    text: user.username;
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: Theme.text-header;
+                }
+
+                Text {
+                    text: user.status;
+                    font-size: 14px;
+                    color: Theme.text-primary;
+                }
+
+                Rectangle { height: 1px; background: #3f4147; }
+
+                Text {
+                    text: "ABOUT ME";
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: Theme.text-muted;
+                }
+
+                Text {
+                    text: user.bio != "" ? user.bio : "No bio set yet.";
+                    color: Theme.text-primary;
+                    wrap: word-wrap;
+                }
+
+                Rectangle { height: 8px; }
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    // Edit Profile Button
+                    Rectangle {
+                        height: 36px;
+                        horizontal-stretch: 1;
+                        border-radius: 4px;
+                        background: #5865f2;
+
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.edit-mode = true; }
+                        }
+
+                        Text {
+                            text: "Edit Profile";
+                            color: white;
+                            font-size: 14px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    // Logout Button
+                    Rectangle {
+                        height: 36px;
+                        width: 90px;
+                        border-radius: 4px;
+                        background: #ed4245;
+
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.logout(); }
+                        }
+
+                        Text {
+                            text: "Log Out";
+                            color: white;
+                            font-size: 14px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // Edit Mode
+            if root.edit-mode : VerticalLayout {
+                padding-top: 32px;
+                spacing: 10px;
+
+                VerticalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: "DISPLAY NAME";
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: Theme.text-muted;
+                    }
+                    edit-name := LineEdit {
+                        text: user.username;
+                        font-size: 14px;
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: "STATUS";
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: Theme.text-muted;
+                    }
+                    status-combo := ComboBox {
+                        model: ["Online", "Idle", "Do Not Disturb", "Offline"];
+                        current-value: user.status;
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: 4px;
+                    Text {
+                        text: "BIO";
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: Theme.text-muted;
+                    }
+                    edit-bio := LineEdit {
+                        text: user.bio;
+                        placeholder-text: "Tell us about yourself...";
+                        font-size: 14px;
+                    }
+                }
+
+                Rectangle { height: 4px; }
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    Rectangle {
+                        height: 36px;
+                        horizontal-stretch: 1;
+                        border-radius: 4px;
+                        background: #5865f2;
+
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.save-profile({
+                                    username: edit-name.text,
+                                    status: status-combo.current-value,
+                                    bio: edit-bio.text,
+                                    avatar-color: user.avatar-color,
+                                });
+                                root.edit-mode = false;
+                            }
+                        }
+
+                        Text {
+                            text: "Save";
+                            color: white;
+                            font-size: 14px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Rectangle {
+                        height: 36px;
+                        width: 80px;
+                        border-radius: 4px;
+                        background: #4f545c;
+
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.edit-mode = false; }
+                        }
+
+                        Text {
+                            text: "Cancel";
+                            color: white;
+                            font-size: 14px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Close button
+        TouchArea {
+            width: 32px;
+            height: 32px;
+            x: parent.width - 40px;
+            y: 16px;
+            clicked => { root.close-profile(); }
+
+            Text {
+                text: "✕";
+                color: Theme.text-muted;
+                font-size: 20px;
+            }
+        }
+    }
+}

@@ -6,6 +6,10 @@ A high-performance, native desktop chat application built with Rust, Slint, and 
 - **Native UI**: Built with Slint for a responsive, memory-efficient interface (no Electron).
 - **Matrix Backend**: Decentralized communication using `matrix-sdk`.
 - **Discord-like UX**: Familiar server rail, channel list, and chat area layout.
+- **Session Persistence**: Securely stores login sessions locally for instant re-access.
+- **User Profiles**: View and edit your display name, status, and bio.
+- **Server Administration**: Manage channels (CRUD) and roles (create with colors).
+- **Flexible Auth**: Login to any Matrix homeserver; registration opens in your default browser via Element.io.
 
 ## Prerequisites
 - **Rust**: Latest stable toolchain (`rustup update`).
@@ -37,4 +41,4 @@ If the app crashes silently on launch:
 3. The `network` crate is currently configured with minimal features (`default-features = false`) to prevent stack overflows.
 
 ## License
-[License Name]
+MIT

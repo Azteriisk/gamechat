@@ -1,0 +1,305 @@
+import { Button, VerticalBox, HorizontalBox, LineEdit, ComboBox } from "std-widgets.slint";
+import { Theme } from "./theme.slint";
+
+export struct RoleData {
+    name: string,
+    color: color,
+}
+
+export struct MemberData {
+    username: string,
+    role: string,
+}
+
+export component AdminPanel inherits Rectangle {
+    in property <string> server-name: "Server";
+    in property <[string]> channels: [];
+    in property <[RoleData]> roles: [];
+    in property <[MemberData]> members: [];
+
+    callback close;
+    callback create-channel(string);     // channel name
+    callback delete-channel(string);     // channel name
+    callback create-role(string);        // role name
+    callback assign-role(string, string); // username, role
+
+    background: #00000080;
+
+    TouchArea { clicked => { root.close(); } }
+
+    Rectangle {
+        width: 560px;
+        height: 520px;
+        background: Theme.background-sidebar;
+        border-radius: 8px;
+        border-width: 1px;
+        border-color: #202225;
+
+        TouchArea {}
+
+        VerticalLayout {
+            padding: 24px;
+            spacing: 16px;
+
+            // Header
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: "⚙️";
+                    font-size: 22px;
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: "Server Settings — " + root.server-name;
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: Theme.text-header;
+                    vertical-alignment: center;
+                }
+            }
+
+            // Tabs area: Channels
+            Rectangle {
+                height: 1px;
+                background: #3f4147;
+            }
+
+            // Channel Management
+            VerticalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: "CHANNELS";
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: Theme.text-muted;
+                }
+
+                // Create channel row
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    new-channel-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "New channel name...";
+                        font-size: 13px;
+                        accepted => {
+                            if self.text != "" {
+                                root.create-channel(self.text);
+                                self.text = "";
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: 80px;
+                        height: 32px;
+                        border-radius: 4px;
+                        background: #248046;
+
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => {
+                                if new-channel-input.text != "" {
+                                    root.create-channel(new-channel-input.text);
+                                    new-channel-input.text = "";
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: "+ Add";
+                            color: white;
+                            font-size: 13px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // Channel list
+                for channel in root.channels : Rectangle {
+                    height: 36px;
+                    border-radius: 4px;
+                    background: ch-hover.has-hover ? #3f4147 : #2b2d31;
+
+                    ch-hover := TouchArea {}
+
+                    HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 8px;
+                        spacing: 8px;
+
+                        Text {
+                            text: "# " + channel;
+                            color: Theme.text-primary;
+                            font-size: 14px;
+                            vertical-alignment: center;
+                            horizontal-stretch: 1;
+                        }
+
+                        // Delete button
+                        Rectangle {
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 4px;
+                            background: del-hover.has-hover ? #ed4245 : transparent;
+
+                            del-hover := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.delete-channel(channel); }
+                            }
+
+                            Text {
+                                text: "🗑";
+                                font-size: 14px;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: #3f4147; }
+
+            // Roles
+            VerticalLayout {
+                spacing: 8px;
+
+                Text {
+                    text: "ROLES";
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: Theme.text-muted;
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    new-role-input := LineEdit {
+                        horizontal-stretch: 1;
+                        placeholder-text: "New role name...";
+                        font-size: 13px;
+                        accepted => {
+                            if self.text != "" {
+                                root.create-role(self.text);
+                                self.text = "";
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: 80px;
+                        height: 32px;
+                        border-radius: 4px;
+                        background: #248046;
+
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => {
+                                if new-role-input.text != "" {
+                                    root.create-role(new-role-input.text);
+                                    new-role-input.text = "";
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: "+ Add";
+                            color: white;
+                            font-size: 13px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // Role list
+                for role in root.roles : HorizontalLayout {
+                    spacing: 8px;
+                    height: 28px;
+
+                    Rectangle {
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 6px;
+                        background: role.color;
+                    }
+
+                    Text {
+                        text: role.name;
+                        color: Theme.text-primary;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            Rectangle { height: 1px; background: #3f4147; }
+
+            // Members
+            VerticalLayout {
+                spacing: 6px;
+                vertical-stretch: 1;
+
+                Text {
+                    text: "MEMBERS";
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: Theme.text-muted;
+                }
+
+                for member in root.members : HorizontalLayout {
+                    spacing: 10px;
+                    height: 32px;
+
+                    Rectangle {
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 12px;
+                        background: #5865f2;
+                        Text {
+                            text: "👤";
+                            font-size: 12px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Text {
+                        text: member.username;
+                        color: Theme.text-header;
+                        font-size: 14px;
+                        vertical-alignment: center;
+                        horizontal-stretch: 1;
+                    }
+
+                    Text {
+                        text: member.role;
+                        color: Theme.text-muted;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+
+        // Close button
+        TouchArea {
+            width: 32px;
+            height: 32px;
+            x: parent.width - 40px;
+            y: 16px;
+            clicked => { root.close(); }
+
+            Text {
+                text: "✕";
+                color: Theme.text-muted;
+                font-size: 20px;
+            }
+        }
+    }
+}

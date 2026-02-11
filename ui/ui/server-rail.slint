@@ -1,33 +1,76 @@
 import { VerticalBox } from "std-widgets.slint";
 import { Theme } from "./theme.slint";
 
+export struct ServerData {
+    id: string,
+    name: string,
+    color: color,
+    online: bool,
+}
+
 component ServerIcon inherits Rectangle {
     in property <bool> active;
-    in property <image> icon;
-    in property <string> name;
+    in property <ServerData> data;
     callback clicked;
 
     width: 48px;
     height: 48px;
     border-radius: active ? 16px : 24px;
-    background: active ? Theme.accent : #313338;
+    background: data.color;
     animate border-radius { duration: 200ms; easing: ease-in-out; }
-    animate background { duration: 200ms; }
 
     TouchArea {
         clicked => { root.clicked(); }
     }
 
+    // Server Name Initials
     Text {
-        text: name; // Placeholder if no icon
+        text: data.name;
         color: white;
+        font-size: 14px;
+        font-weight: 700;
         vertical-alignment: center;
         horizontal-alignment: center;
-        font-size: 12px;
+    }
+
+    // Active Indicator (White pill on left)
+    if active : Rectangle {
+        width: 4px;
+        height: 32px;
+        border-radius: 2px;
+        background: white;
+        x: -12px;
+        y: (parent.height - self.height) / 2;
+    }
+
+    // Status Indicator (Bottom Right)
+    Rectangle {
+        width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        background: Theme.background-rail; // Border effect
+        x: 32px;
+        y: 32px;
+
+        Rectangle {
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background: data.online ? #23a559 : #80848e;
+            x: 3px;
+            y: 3px;
+        }
     }
 }
 
 export component ServerRail inherits Rectangle {
+    in property <[ServerData]> servers: [
+        { id: "dm", name: "DM", color: #5865f2, online: true },
+        { id: "rust", name: "R", color: #e64a19, online: false }
+    ];
+    in-out property <int> active-index: 0;
+    callback server-selected(int);
+
     width: 72px;
     background: Theme.background-rail;
 
@@ -36,22 +79,14 @@ export component ServerRail inherits Rectangle {
         spacing: 8px;
         alignment: start;
 
-        ServerIcon {
-            name: "DM";
-            active: true;
-            clicked => { debug("DM clicked"); }
-        }
-
-        Rectangle {
-            height: 2px;
-            width: 32px;
-            background: Theme.divider;
-            x: (parent.width - self.width) / 2;
-        }
-
-        ServerIcon {
-            name: "R";
-            clicked => { debug("Rust Server clicked"); }
+        for server[i] in servers : ServerIcon {
+            data: server;
+            active: i == root.active-index;
+            clicked => {
+                root.active-index = i;
+                root.server-selected(i);
+            }
         }
     }
 }
+

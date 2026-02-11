@@ -1,0 +1,266 @@
+import { Button, LineEdit, CheckBox, VerticalBox, HorizontalBox, ComboBox } from "std-widgets.slint";
+import { Theme } from "./theme.slint";
+
+export struct SavedProfile {
+    user-id: string,
+    display-name: string,
+    homeserver: string,
+}
+
+export component LoginScreen inherits Rectangle {
+    background: Theme.background-dark;
+
+    // Callbacks
+    callback login(string, string, string);       // username, password, homeserver
+    callback open-register;                        // opens Element.io in browser
+    callback quick-login(int);                     // index into saved profiles
+
+    // Properties
+    in property <[SavedProfile]> saved-profiles: [];
+    in-out property <string> error-message: "";
+    in-out property <bool> is-loading: false;
+    in-out property <bool> show-advanced: false;
+    in-out property <string> homeserver-value: "";
+
+    VerticalLayout {
+        alignment: center;
+
+        // Centered card
+        HorizontalLayout {
+            alignment: center;
+
+            Rectangle {
+                width: 420px;
+                background: Theme.background-sidebar;
+                border-radius: 12px;
+                border-width: 1px;
+                border-color: #202225;
+
+                VerticalLayout {
+                    padding: 32px;
+                    spacing: 16px;
+
+                    // Logo / Title
+                    Text {
+                        text: "🎮 GameChat";
+                        font-size: 28px;
+                        font-weight: 700;
+                        color: Theme.text-header;
+                        horizontal-alignment: center;
+                    }
+
+                    Text {
+                        text: "Log in with your Matrix account";
+                        font-size: 14px;
+                        color: Theme.text-muted;
+                        horizontal-alignment: center;
+                    }
+
+                    Rectangle { height: 4px; }
+
+                    // Username
+                    VerticalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: "USERNAME";
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: Theme.text-muted;
+                        }
+                        username-input := LineEdit {
+                            placeholder-text: "Enter your username";
+                            font-size: 14px;
+                        }
+                    }
+
+                    // Password
+                    VerticalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: "PASSWORD";
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: Theme.text-muted;
+                        }
+                        password-input := LineEdit {
+                            placeholder-text: "Enter your password";
+                            input-type: password;
+                            font-size: 14px;
+                            accepted => {
+                                root.login(username-input.text, password-input.text,
+                                root.homeserver-value != "" ?
+                                    root.homeserver-value : "https://matrix.org");
+                            }
+                        }
+                    }
+
+                    // Advanced: Homeserver (collapsed by default)
+                    HorizontalLayout {
+                        alignment: start;
+                        Rectangle {
+                            width: adv-text.preferred-width + 16px;
+                            height: 20px;
+
+                            TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.show-advanced = !root.show-advanced; }
+                            }
+
+                            adv-text := Text {
+                                text: root.show-advanced ? "▾ Homeserver" : "▸ Advanced";
+                                color: Theme.text-muted;
+                                font-size: 12px;
+                            }
+                        }
+                    }
+
+                    if root.show-advanced : VerticalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: "HOMESERVER";
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: Theme.text-muted;
+                        }
+                        homeserver-input := LineEdit {
+                            placeholder-text: "https://matrix.org";
+                            font-size: 14px;
+                            edited(text) => { root.homeserver-value = self.text; }
+                        }
+                        Text {
+                            text: "Only change this if you use a different Matrix server.";
+                            font-size: 11px;
+                            color: Theme.text-muted;
+                        }
+                    }
+
+                    // Error message
+                    if root.error-message != "" : Text {
+                        text: root.error-message;
+                        color: #ed4245;
+                        font-size: 13px;
+                        wrap: word-wrap;
+                    }
+
+                    // Login button
+                    Rectangle {
+                        height: 44px;
+                        border-radius: 4px;
+                        background: root.is-loading ? #4752c4 : #5865f2;
+
+                        TouchArea {
+                            enabled: !root.is-loading;
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.login(username-input.text, password-input.text,
+                                    root.homeserver-value != "" ?
+                                        root.homeserver-value : "https://matrix.org");
+                            }
+                        }
+
+                        Text {
+                            text: root.is-loading ? "Connecting..." : "Log In";
+                            color: white;
+                            font-size: 15px;
+                            font-weight: 600;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    // Register link
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 4px;
+
+                        Text {
+                            text: "Don't have an account?";
+                            color: Theme.text-muted;
+                            font-size: 13px;
+                            vertical-alignment: center;
+                        }
+
+                        Rectangle {
+                            width: reg-text.preferred-width + 4px;
+                            height: 20px;
+
+                            TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.open-register(); }
+                            }
+
+                            reg-text := Text {
+                                text: "Register on Element.io →";
+                                color: #00aff4;
+                                font-size: 13px;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    // Saved Profiles Section
+                    if root.saved-profiles.length > 0 : VerticalLayout {
+                        spacing: 8px;
+
+                        Rectangle {
+                            height: 1px;
+                            background: #3f4147;
+                        }
+
+                        Text {
+                            text: "SAVED PROFILES";
+                            font-size: 11px;
+                            font-weight: 700;
+                            color: Theme.text-muted;
+                        }
+
+                        for profile[idx] in root.saved-profiles : Rectangle {
+                            height: 48px;
+                            border-radius: 6px;
+                            background: profile-ta.has-hover ? #3f4147 : #2b2d31;
+
+                            profile-ta := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.quick-login(idx); }
+                            }
+
+                            HorizontalLayout {
+                                padding: 8px;
+                                spacing: 10px;
+
+                                Rectangle {
+                                    width: 32px;
+                                    height: 32px;
+                                    border-radius: 16px;
+                                    background: #5865f2;
+
+                                    Text {
+                                        text: "👤";
+                                        font-size: 16px;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
+
+                                VerticalLayout {
+                                    alignment: center;
+                                    Text {
+                                        text: profile.display-name;
+                                        color: Theme.text-header;
+                                        font-size: 14px;
+                                        font-weight: 600;
+                                    }
+                                    Text {
+                                        text: profile.user-id;
+                                        color: Theme.text-muted;
+                                        font-size: 11px;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

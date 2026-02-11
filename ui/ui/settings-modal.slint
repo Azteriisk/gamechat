@@ -1,0 +1,102 @@
+import { Button, StandardTableView, VerticalBox, HorizontalBox, LineEdit, ComboBox } from "std-widgets.slint";
+import { Theme } from "./theme.slint";
+
+export component SettingsModal inherits Rectangle {
+    in property <[string]> input-devices: ["Default Input"];
+    in property <[string]> output-devices: ["Default Output"];
+    callback close;
+    callback save-settings(string, string); // input, output
+
+    background: #00000080; // Dimmed overlay
+
+    TouchArea {
+        clicked => { root.close(); }
+    }
+
+    Rectangle {
+        width: 600px;
+        height: 500px;
+        background: Theme.background-sidebar;
+        border-radius: 8px;
+        border-width: 1px;
+        border-color: #202225;
+
+        // Prevent clicks from closing modal
+        TouchArea {}
+
+        VerticalLayout {
+            padding: 24px;
+            spacing: 20px;
+
+            Text {
+                text: "USER SETTINGS";
+                font-size: 20px;
+                font-weight: 700;
+                color: Theme.text-header;
+            }
+            
+            Rectangle { height: 1px; background: Theme.divider; }
+
+            VerticalBox {
+                spacing: 8px;
+                Text {
+                    text: "VOICE SETTINGS";
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: Theme.text-muted;
+                }
+
+                Text { text: "Input Device"; color: Theme.text-primary; }
+                input-combo := ComboBox {
+                    model: root.input-devices;
+                    current-value: root.input-devices[0];
+                }
+
+                Text { text: "Output Device"; color: Theme.text-primary; }
+                output-combo := ComboBox {
+                    model: root.output-devices;
+                    current-value: root.output-devices[0];
+                }
+                
+                Text {
+                    text: "Input Volume";
+                    color: Theme.text-primary;
+                }
+                // Mock Volume Slider
+                Rectangle {
+                    height: 4px;
+                    background: #4f545c;
+                    border-radius: 2px;
+                    Rectangle {
+                        width: 70%;
+                        height: 100%;
+                        background: Theme.accent;
+                        border-radius: 2px;
+                        x: 0;
+                    }
+                }
+            }
+
+            Rectangle { vertical-stretch: 1; } // Spacer
+
+            HorizontalLayout {
+                alignment: end;
+                spacing: 12px;
+                
+                Button {
+                    text: "Cancel";
+                    clicked => { root.close(); }
+                }
+                
+                Button {
+                    text: "Done";
+                    primary: true;
+                    clicked => {
+                        root.save-settings(input-combo.current-value, output-combo.current-value);
+                        root.close();
+                    }
+                }
+            }
+        }
+    }
+}

@@ -8,7 +8,7 @@ component ChannelItem inherits Rectangle {
 
     height: 32px;
     border-radius: 4px;
-    background: active ? #3f4147 : transparent; // Hover/Active styling
+    background: active ? #3f4147 : transparent;
 
     TouchArea {
         clicked => { root.clicked(); }
@@ -17,7 +17,7 @@ component ChannelItem inherits Rectangle {
     HorizontalLayout {
         padding-left: 8px;
         spacing: 6px;
-        
+
         Text {
             text: "#";
             color: #949ba4;
@@ -34,25 +34,188 @@ component ChannelItem inherits Rectangle {
 
 export component ChannelList inherits Rectangle {
     in property <[string]> channels: ["general", "random", "announcements"];
+    in-out property <string> active-channel: "general";
+    in-out property <bool> voice-active: false;
+    in property <string> voice-channel-name: "General Voice";
+    in property <[string]> voice-users: [];
+    callback channel-selected(string);
+    callback toggle-voice;
+    callback settings-clicked;
+    callback admin-clicked;
+    callback profile-clicked;
+    in property <string> display-name: "User";
+    in property <bool> is-admin: false;
+
     background: Theme.background-sidebar;
     width: 240px;
 
-    VerticalBox {
-        padding: 16px;
-        spacing: 4px;
-        alignment: start;
+    VerticalLayout {
+        // Channel list area (takes remaining space)
+        VerticalBox {
+            vertical-stretch: 1;
+            padding: 16px;
+            spacing: 4px;
+            alignment: start;
 
-        Text {
-            text: "TEXT CHANNELS";
-            color: Theme.text-muted;
-            font-size: 11px;
-            font-weight: 700;
+            Text {
+                text: "TEXT CHANNELS";
+                color: Theme.text-muted;
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            for channel in channels : ChannelItem {
+                name: channel;
+                active: root.active-channel == channel;
+                clicked => {
+                    root.active-channel = channel;
+                    root.channel-selected(channel);
+                }
+            }
+
+            Rectangle { height: 16px; }
+
+            Text {
+                text: "VOICE CHANNELS";
+                color: Theme.text-muted;
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            // Voice Channel Header
+            Rectangle {
+                height: 32px;
+                border-radius: 4px;
+                background: root.voice-active ? #3f4147 : transparent;
+
+                TouchArea {
+                    clicked => { root.toggle-voice(); }
+                    mouse-cursor: pointer;
+                }
+
+                HorizontalLayout {
+                    padding-left: 8px;
+                    spacing: 6px;
+
+                    Text {
+                        text: "🔊";
+                        font-size: 16px;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: root.voice-active ? "Voice Connected" : root.voice-channel-name;
+                        color: root.voice-active ? #23a559 : Theme.text-primary;
+                        vertical-alignment: center;
+                        font-weight: root.voice-active ? 700 : 400;
+                    }
+                }
+            }
+
+            // Connected Users List
+            for user in root.voice-users : Rectangle {
+                height: 28px;
+
+                HorizontalLayout {
+                    padding-left: 32px;
+                    spacing: 8px;
+
+                    Rectangle {
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 10px;
+                        background: #5865f2;
+
+                        Text {
+                            text: "👤";
+                            font-size: 10px;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Text {
+                        text: user;
+                        color: Theme.text-primary;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                    }
+                }
+            }
         }
 
-        for channel in channels : ChannelItem {
-            name: channel;
-            active: channel == "general"; // Mock active state
-            clicked => { debug("Channel clicked:", channel); }
+        // User Controls (pinned to bottom via layout flow)
+        Rectangle {
+            height: 52px;
+            background: #232428;
+
+            HorizontalLayout {
+                padding: 8px;
+                spacing: 8px;
+
+                // Clickable user area
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.profile-clicked(); }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Rectangle {
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 16px;
+                            background: Theme.accent;
+                            Text { text: "👤"; vertical-alignment: center; horizontal-alignment: center; }
+                        }
+
+                        VerticalLayout {
+                            alignment: center;
+                            Text { text: root.display-name; color: Theme.text-header; font-weight: 600; font-size: 13px; }
+                            Text { text: "Online"; color: #23a559; font-size: 11px; }
+                        }
+                    }
+                }
+
+                Rectangle { horizontal-stretch: 1; }
+
+                // Admin button (visible only for admins)
+                if root.is-admin : Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 4px;
+                    background: admin-area.has-hover ? #3f4147 : transparent;
+
+                    admin-area := TouchArea {
+                        clicked => { root.admin-clicked(); }
+                        mouse-cursor: pointer;
+                    }
+
+                    Text {
+                        text: "🛡";
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                        font-size: 16px;
+                    }
+                }
+
+                Rectangle {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 4px;
+                    background: settings-area.has-hover ? #3f4147 : transparent;
+
+                    settings-area := TouchArea {
+                        clicked => { root.settings-clicked(); }
+                        mouse-cursor: pointer;
+                    }
+
+                    Text {
+                        text: "⚙️";
+                        vertical-alignment: center;
+                        horizontal-alignment: center;
+                        font-size: 16px;
+                    }
+                }
+            }
         }
     }
 }

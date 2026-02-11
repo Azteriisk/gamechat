@@ -5,8 +5,10 @@ component MessageItem inherits Rectangle {
     in property <string> sender;
     in property <string> text;
     in property <image> avatar; // Placeholder
+    callback profile-clicked;
 
     height: 60px; // Dynamic height todo
+
     background: transparent;
 
     HorizontalLayout {
@@ -19,6 +21,10 @@ component MessageItem inherits Rectangle {
             height: 40px;
             border-radius: 20px;
             background: Theme.accent;
+            
+            TouchArea {
+                clicked => { root.profile-clicked(); }
+            }
         }
 
         VerticalLayout {
@@ -28,6 +34,10 @@ component MessageItem inherits Rectangle {
                 color: Theme.text-header;
                 font-weight: 600;
                 font-size: 14px;
+                
+                TouchArea {
+                    clicked => { root.profile-clicked(); }
+                }
             }
             Text {
                 text: text;
@@ -36,14 +46,18 @@ component MessageItem inherits Rectangle {
                 font-size: 14px;
             }
         }
+
     }
 }
 
 export component ChatArea inherits Rectangle {
     in property <[string]> messages;
+    in property <string> channel-name: "general";
     callback send-message(string);
+    callback profile-clicked;
 
     background: Theme.background-dark;
+
 
     VerticalLayout {
         ScrollView {
@@ -51,7 +65,9 @@ export component ChatArea inherits Rectangle {
                 for msg in messages : MessageItem {
                     sender: "User"; // Mock sender
                     text: msg;
+                    profile-clicked => { root.profile-clicked(); }
                 }
+
             }
         }
 
@@ -67,7 +83,7 @@ export component ChatArea inherits Rectangle {
                 input := LineEdit {
                     height: 100%;
                     width: 100%;
-                    placeholder-text: "Message #general";
+                    placeholder-text: "Message #" + root.channel-name;
                     font-size: 14px;
                     accepted => {
                         root.send-message(self.text);
